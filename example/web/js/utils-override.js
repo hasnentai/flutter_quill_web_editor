@@ -8,10 +8,11 @@
  */
 
 // Import package utils
-import { 
+import {
   rgbToHex,
   normalizeColor,
   mapFontSize,
+  mapFontWeight,
   extractBodyContent,
   preprocessHtml,
   cleanHtmlForPreview
@@ -41,5 +42,5 @@ export function mapFontFamily(fontFamily) {
 }
 
 // Re-export other utility functions unchanged
-export { rgbToHex, normalizeColor, mapFontSize, extractBodyContent, preprocessHtml, cleanHtmlForPreview };
+export { rgbToHex, normalizeColor, mapFontSize, mapFontWeight, extractBodyContent, preprocessHtml, cleanHtmlForPreview };
 

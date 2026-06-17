@@ -1,0 +1,32 @@
+/**
+ * Font Weight Picker
+ * ==================
+ * Labels and styling for the custom "weight" dropdown (Normal / Semi Bold / Bold).
+ * The editor uses a style-based weight format with numeric font-weight values,
+ * so each picker item must declare its label. The default (unset) is "Normal".
+ */
+
+/* Give the picker enough room for the longest label ("Semi Bold") */
+.ql-snow .ql-picker.ql-weight {
+  width: 100px;
+}
+
+/* Default / unset weight */
+.ql-snow .ql-picker.ql-weight .ql-picker-label::before,
+.ql-snow .ql-picker.ql-weight .ql-picker-item::before {
+  content: 'Normal';
+}
+
+/* Semi Bold (600) */
+.ql-snow .ql-picker.ql-weight .ql-picker-label[data-value="600"]::before,
+.ql-snow .ql-picker.ql-weight .ql-picker-item[data-value="600"]::before {
+  content: 'Semi Bold';
+  font-weight: 600;
+}
+
+/* Bold (700) */
+.ql-snow .ql-picker.ql-weight .ql-picker-label[data-value="700"]::before,
+.ql-snow .ql-picker.ql-weight .ql-picker-item[data-value="700"]::before {
+  content: 'Bold';
+  font-weight: 700;
+}

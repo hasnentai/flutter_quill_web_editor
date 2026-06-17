@@ -21,7 +21,7 @@
   border: none;
   flex: 1;
   font-family: inherit;
-  font-size: 0.917rem;
+  font-size: 14px; /* default size; matches the default label in the size dropdown */
   overflow-y: auto;
 }
 

@@ -14,7 +14,7 @@ abstract class ExportStyles {
 
 body {
   font-family: 'Roboto', sans-serif;
-  font-size: 0.917rem;
+  font-size: 14px;
   line-height: 1.8;
   color: #2c2825;
   background: #ffffff;

@@ -12,10 +12,11 @@
 
 // Import custom configuration
 import { FONT_WHITELIST, TOOLBAR_OPTIONS } from './config-override.js';
-import { SIZE_WHITELIST } from '/assets/packages/quill_web_editor/web/js/config.js';
+import { SIZE_WHITELIST, WEIGHT_WHITELIST, DEFAULT_SIZE } from '/assets/packages/quill_web_editor/web/js/config.js';
+import { enforceDefaultSize } from '/assets/packages/quill_web_editor/web/js/quill-setup.js';
 
 // Import custom utils (with Mulish font mapping)
-import { mapFontFamily, rgbToHex, mapFontSize } from './utils-override.js';
+import { mapFontFamily, rgbToHex, mapFontSize, mapFontWeight } from './utils-override.js';
 
 /**
  * Register custom formats and modules with Quill (with custom font whitelist)
@@ -31,10 +32,20 @@ export function registerQuillModules(Quill, QuillTableBetter) {
   Font.whitelist = FONT_WHITELIST;
   Quill.register(Font, true);
 
-  // Register custom sizes (from package)
-  const Size = Quill.import('formats/size');
-  Size.whitelist = SIZE_WHITELIST;
-  Quill.register(Size, true);
+  // Register px-based font sizes using the inline-style size attributor
+  // so the dropdown shows real values (12px, 14px, ...) instead of keywords.
+  const SizeStyle = Quill.import('attributors/style/size');
+  SizeStyle.whitelist = SIZE_WHITELIST;
+  Quill.register(SizeStyle, true);
+
+  // Register the custom "weight" format (Normal / Semi Bold / Bold) backed by
+  // inline font-weight. Independent of the bold button.
+  const Parchment = Quill.import('parchment');
+  const WeightStyle = new Parchment.StyleAttributor('weight', 'font-weight', {
+    scope: Parchment.Scope.INLINE,
+    whitelist: WEIGHT_WHITELIST.filter((w) => typeof w === 'string'),
+  });
+  Quill.register({ 'formats/weight': WeightStyle }, true);
 }
 
 /**
@@ -59,10 +70,11 @@ function createClipboardMatchers(Quill) {
         formats.font = fontMatch[1];
       }
       
-      // Check for ql-size-* classes
+      // Check for ql-size-* classes (legacy keyword sizes) - map to px
       const sizeMatch = className.match(/ql-size-(\S+)/);
       if (sizeMatch) {
-        formats.size = sizeMatch[1];
+        const mappedSize = mapFontSize(sizeMatch[1]);
+        if (mappedSize) formats.size = mappedSize;
       }
       
       // Parse inline font-family (using our custom mapFontFamily)
@@ -76,7 +88,13 @@ function createClipboardMatchers(Quill) {
         const size = mapFontSize(style.fontSize);
         if (size) formats.size = size;
       }
-      
+
+      // Parse inline font-weight → weight format (snapped to dropdown options)
+      if (style.fontWeight) {
+        const mappedWeight = mapFontWeight(style.fontWeight);
+        if (mappedWeight) formats.weight = mappedWeight;
+      }
+
       // Parse inline color
       if (style.color) {
         const hexColor = rgbToHex(style.color);
@@ -126,12 +144,10 @@ function createClipboardMatchers(Quill) {
         if (hexBg) formats.background = hexBg;
       }
       
-      // Parse font-weight (bold)
+      // Parse font-weight → weight format (snapped to dropdown options)
       if (style.fontWeight) {
-        const weight = style.fontWeight.toString().toLowerCase();
-        if (weight === 'bold' || weight === '700' || weight === '600' || weight === '800' || weight === '900') {
-          formats.bold = true;
-        }
+        const mappedWeight = mapFontWeight(style.fontWeight);
+        if (mappedWeight) formats.weight = mappedWeight;
       }
       
       // Parse font-style (italic)
@@ -180,12 +196,12 @@ function createClipboardMatchers(Quill) {
         if (font) formats.font = font;
       }
       
-      // Handle size attribute (1-7)
+      // Handle size attribute (1-7) - map to a whitelisted px value
       if (node.size) {
         const size = parseInt(node.size);
-        if (size <= 2) formats.size = 'small';
-        else if (size >= 5) formats.size = 'large';
-        else if (size >= 6) formats.size = 'huge';
+        if (size <= 2) formats.size = '12px';
+        else if (size >= 6) formats.size = '32px';
+        else if (size >= 5) formats.size = '24px';
       }
       
       if (Object.keys(formats).length > 0) {
@@ -205,10 +221,11 @@ function createClipboardMatchers(Quill) {
         formats.font = fontMatch[1];
       }
       
-      // Check for ql-size-* classes
+      // Check for ql-size-* classes (legacy keyword sizes) - map to px
       const sizeMatch = className.match(/ql-size-(\S+)/);
       if (sizeMatch) {
-        formats.size = sizeMatch[1];
+        const mappedSize = mapFontSize(sizeMatch[1]);
+        if (mappedSize) formats.size = mappedSize;
       }
       
       if (Object.keys(formats).length > 0) {
@@ -260,7 +277,10 @@ export function initializeQuill(Quill, QuillTableBetter, selector = '#editor') {
       }
     }
   });
-  
+
+  // Make the default size the active selection in the dropdown / for new text
+  enforceDefaultSize(editor, Quill, DEFAULT_SIZE);
+
   return editor;
 }
 

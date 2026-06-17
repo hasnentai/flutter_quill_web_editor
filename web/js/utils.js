@@ -4,7 +4,29 @@
  * Shared utilities for Quill editor
  */
 
-import { FONT_FAMILY_MAP } from './config.js';
+import { FONT_FAMILY_MAP, SIZE_WHITELIST } from './config.js';
+
+// Whitelisted pixel sizes (the string entries of SIZE_WHITELIST, e.g. '14px')
+const SIZE_PX_WHITELIST = SIZE_WHITELIST.filter((s) => typeof s === 'string');
+
+/**
+ * Snap an arbitrary pixel value to the nearest whitelisted px size.
+ * @param {number} px - pixel value
+ * @returns {string|false} nearest whitelisted size (e.g. '14px') or false
+ */
+function snapToWhitelist(px) {
+  if (px === null || isNaN(px) || SIZE_PX_WHITELIST.length === 0) return false;
+  let nearest = SIZE_PX_WHITELIST[0];
+  let best = Infinity;
+  for (const s of SIZE_PX_WHITELIST) {
+    const diff = Math.abs(parseFloat(s) - px);
+    if (diff < best) {
+      best = diff;
+      nearest = s;
+    }
+  }
+  return nearest;
+}
 
 /**
  * Convert RGB/RGBA color to hex format
@@ -100,20 +122,38 @@ export function mapFontSize(size) {
     pxValue = parseFloat(sizeStr);
   }
   
-  // Handle keyword sizes
-  if (sizeStr === 'small' || sizeStr === 'x-small' || sizeStr === 'xx-small') return 'small';
-  if (sizeStr === 'large' || sizeStr === 'x-large') return 'large';
-  if (sizeStr === 'xx-large' || sizeStr === 'xxx-large') return 'huge';
-  
-  // Map px values to Quill sizes
+  // Handle keyword sizes - convert to an approximate px value
+  if (sizeStr === 'small' || sizeStr === 'x-small' || sizeStr === 'xx-small') pxValue = 12;
+  else if (sizeStr === 'large' || sizeStr === 'x-large') pxValue = 24;
+  else if (sizeStr === 'xx-large' || sizeStr === 'xxx-large') pxValue = 32;
+
+  // Snap any resolved px value to the nearest whitelisted size
   if (pxValue !== null) {
-    if (pxValue <= 12) return 'small';
-    if (pxValue <= 18) return false; // normal
-    if (pxValue <= 24) return 'large';
-    return 'huge';
+    return snapToWhitelist(pxValue);
   }
-  
-  return false; // normal size
+
+  return false; // normal/default size
+}
+
+/**
+ * Map an arbitrary CSS font-weight to one of the dropdown options.
+ * Snaps to: false (Normal / <=400), '600' (Semi Bold), '700' (Bold).
+ * @param {string|number} weight - CSS font-weight value
+ * @returns {string|false} '600', '700', or false for normal/unset
+ */
+export function mapFontWeight(weight) {
+  if (!weight) return false;
+  const w = weight.toString().toLowerCase().trim();
+
+  let num = null;
+  if (w === 'bold' || w === 'bolder') num = 700;
+  else if (w === 'normal' || w === 'lighter') num = 400;
+  else if (!isNaN(parseInt(w, 10))) num = parseInt(w, 10);
+
+  if (num === null) return false;
+  if (num >= 700) return '700'; // 700-900 -> Bold
+  if (num >= 500) return '600'; // 500-699 -> Semi Bold
+  return false; // <=400 -> Normal (unset)
 }
 
 /**
@@ -131,7 +171,6 @@ export function preprocessHtml(html) {
     const style = el.style;
     const classes = [];
     let fontClass = null;
-    let sizeClass = null;
     let colorStyle = null;
     let bgColorStyle = null;
     
@@ -145,12 +184,12 @@ export function preprocessHtml(html) {
       }
     }
     
-    // Convert font-size to ql-size-* class
+    // Normalize inline font-size to a whitelisted px value (style-based size format)
     if (style.fontSize) {
       const size = mapFontSize(style.fontSize);
       if (size) {
-        sizeClass = 'ql-size-' + size;
-        classes.push(sizeClass);
+        style.fontSize = size; // e.g. '14px'
+      } else {
         style.removeProperty('font-size');
       }
     }

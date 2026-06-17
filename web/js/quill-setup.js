@@ -4,8 +4,8 @@
  * Quill editor initialization and registration
  */
 
-import { FONT_WHITELIST, SIZE_WHITELIST, TOOLBAR_OPTIONS } from './config.js';
-import { rgbToHex, mapFontFamily, mapFontSize } from './utils.js';
+import { FONT_WHITELIST, SIZE_WHITELIST, WEIGHT_WHITELIST, DEFAULT_SIZE, TOOLBAR_OPTIONS } from './config.js';
+import { rgbToHex, mapFontFamily, mapFontSize, mapFontWeight } from './utils.js';
 
 /**
  * Register custom formats and modules with Quill
@@ -23,10 +23,21 @@ export function registerQuillModules(Quill, QuillTableBetter) {
   Font.whitelist = FONT_WHITELIST;
   Quill.register(Font, true);
 
-  // Register custom sizes
-  const Size = Quill.import('formats/size');
-  Size.whitelist = SIZE_WHITELIST;
-  Quill.register(Size, true);
+  // Register px-based font sizes using the inline-style size attributor.
+  // This makes the dropdown show real values (12px, 14px, ...) and produces
+  // `style="font-size: 14px"` output instead of `class="ql-size-*"`.
+  const SizeStyle = Quill.import('attributors/style/size');
+  SizeStyle.whitelist = SIZE_WHITELIST;
+  Quill.register(SizeStyle, true);
+
+  // Register a custom "weight" format backed by inline font-weight, used by the
+  // Normal / Semi Bold / Bold dropdown. This is independent of the bold button.
+  const Parchment = Quill.import('parchment');
+  const WeightStyle = new Parchment.StyleAttributor('weight', 'font-weight', {
+    scope: Parchment.Scope.INLINE,
+    whitelist: WEIGHT_WHITELIST.filter((w) => typeof w === 'string'),
+  });
+  Quill.register({ 'formats/weight': WeightStyle }, true);
 }
 
 /**
@@ -67,12 +78,10 @@ export function createClipboardMatchers(Quill) {
         if (hexBg) formats.background = hexBg;
       }
       
-      // Parse font-weight (bold)
+      // Parse font-weight → weight format (snapped to dropdown options)
       if (style.fontWeight) {
-        const weight = style.fontWeight.toString().toLowerCase();
-        if (weight === 'bold' || weight === '700' || weight === '600' || weight === '800' || weight === '900') {
-          formats.bold = true;
-        }
+        const mappedWeight = mapFontWeight(style.fontWeight);
+        if (mappedWeight) formats.weight = mappedWeight;
       }
       
       // Parse font-style (italic)
@@ -121,12 +130,12 @@ export function createClipboardMatchers(Quill) {
         if (font) formats.font = font;
       }
       
-      // Handle size attribute (1-7)
+      // Handle size attribute (1-7) - map to a whitelisted px value
       if (node.size) {
         const size = parseInt(node.size);
-        if (size <= 2) formats.size = 'small';
-        else if (size >= 5) formats.size = 'large';
-        else if (size >= 6) formats.size = 'huge';
+        if (size <= 2) formats.size = '12px';
+        else if (size >= 6) formats.size = '32px';
+        else if (size >= 5) formats.size = '24px';
       }
       
       if (Object.keys(formats).length > 0) {
@@ -146,10 +155,11 @@ export function createClipboardMatchers(Quill) {
         formats.font = fontMatch[1];
       }
       
-      // Check for ql-size-* classes
+      // Check for ql-size-* classes (legacy keyword sizes) - map to px
       const sizeMatch = className.match(/ql-size-(\S+)/);
       if (sizeMatch) {
-        formats.size = sizeMatch[1];
+        const mappedSize = mapFontSize(sizeMatch[1]);
+        if (mappedSize) formats.size = mappedSize;
       }
       
       if (Object.keys(formats).length > 0) {
@@ -223,7 +233,13 @@ function createCellMatcher(Quill) {
       const size = mapFontSize(style.fontSize);
       if (size) formats.size = size;
     }
-    
+
+    // Parse inline font-weight → weight format (snapped to dropdown options)
+    if (style.fontWeight) {
+      const mappedWeight = mapFontWeight(style.fontWeight);
+      if (mappedWeight) formats.weight = mappedWeight;
+    }
+
     // Parse inline color
     if (style.color) {
       const hexColor = rgbToHex(style.color);
@@ -250,6 +266,32 @@ function createCellMatcher(Quill) {
  * @param {string} selector - Editor container selector
  * @returns {Object} Quill editor instance
  */
+/**
+ * Make `defaultSize` the active default in the size dropdown and for new text.
+ * When the cursor is at a collapsed (no-selection) location that has no explicit
+ * size, applies the default size to the cursor only - it does NOT reformat
+ * existing/selected text, so pasted content keeps its own sizes.
+ * @param {Object} editor - Quill instance
+ * @param {Object} Quill - Quill constructor (for sources)
+ * @param {string} defaultSize - e.g. '14px'
+ */
+export function enforceDefaultSize(editor, Quill, defaultSize) {
+  if (!defaultSize) return;
+
+  const applyDefault = (range) => {
+    if (!range || range.length !== 0) return; // only a collapsed cursor
+    const formats = editor.getFormat(range);
+    if (formats.size === undefined) {
+      // API source so the toolbar picker updates to show the default selected
+      editor.format('size', defaultSize, Quill.sources.API);
+    }
+  };
+
+  editor.on('selection-change', (range) => applyDefault(range));
+  // Apply for the initial cursor position (no-op until the editor is focused)
+  applyDefault(editor.getSelection());
+}
+
 export function initializeQuill(Quill, QuillTableBetter, selector = '#editor') {
   // Register modules
   registerQuillModules(Quill, QuillTableBetter);
@@ -282,7 +324,10 @@ export function initializeQuill(Quill, QuillTableBetter, selector = '#editor') {
       }
     }
   });
-  
+
+  // Make the default size the active selection in the dropdown / for new text
+  enforceDefaultSize(editor, Quill, DEFAULT_SIZE);
+
   return editor;
 }
 
