@@ -7,6 +7,7 @@
 import { ZOOM_MIN, ZOOM_MAX } from './config.js';
 import { preprocessHtml, extractBodyContent } from './utils.js';
 import { sendContentChange, sendContentsResponse, sendZoomChange, sendCustomActionResponse } from './flutter-bridge.js';
+import { applyOrderedListContinuation } from './list-numbering.js';
 
 // Registry for custom action handlers
 const customActionHandlers = new Map();
@@ -100,6 +101,8 @@ export function handleCommand(data, editor, Quill) {
     case 'setContents':
       if (data.delta) {
         editor.setContents(data.delta, Quill.sources.SILENT);
+        // SILENT source skips the text-change pipeline, so fix list numbering here.
+        applyOrderedListContinuation(editor.root);
       }
       break;
 

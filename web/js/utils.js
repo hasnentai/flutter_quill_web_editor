@@ -5,6 +5,7 @@
  */
 
 import { FONT_FAMILY_MAP, SIZE_WHITELIST } from './config.js';
+import { applyOrderedListContinuation } from './list-numbering.js';
 
 // Whitelisted pixel sizes (the string entries of SIZE_WHITELIST, e.g. '14px')
 const SIZE_PX_WHITELIST = SIZE_WHITELIST.filter((s) => typeof s === 'string');
@@ -416,7 +417,10 @@ export function cleanHtmlForPreview(html) {
   doc.querySelectorAll('[class*="ql-table-better-tool"], [class*="ql-table-better-col"], [class*="ql-table-better-row"], [class*="ql-table-better-corner"]').forEach(el => {
     el.remove();
   });
-  
+
+  // Keep numbered lists continuous across tables in the read-only preview too.
+  applyOrderedListContinuation(doc.body);
+
   return doc.body.innerHTML;
 }
 

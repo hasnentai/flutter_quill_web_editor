@@ -29,6 +29,13 @@ export const DEFAULT_SIZE = '14px';
 // '600' = Semi Bold, '700' = Bold. Labels are defined in styles/weights.css.
 export const WEIGHT_WHITELIST = [false, '600', '700'];
 
+// Line-height whitelist for the custom "lineheight" dropdown (block style format).
+// `false` is the unset/default and renders as "Line Height" in the picker. The
+// numeric values are unitless CSS line-height multipliers and become inline
+// `style="line-height: <value>"` on the block (p, h1-h6, li, ...). Labels are
+// defined in styles/lineheight.css.
+export const LINE_HEIGHT_WHITELIST = [false, '1', '1.15', '1.5', '2', '2.5', '3'];
+
 // Font family mapping - maps common fonts to Quill font classes
 // Custom mappings can be extended in config-override.js
 export const FONT_FAMILY_MAP = {
@@ -80,7 +87,10 @@ export const TOOLBAR_OPTIONS = {
     
     // Text alignment
     [{ 'align': [] }],
-    
+
+    // Line height (paragraph line spacing)
+    [{ 'lineheight': LINE_HEIGHT_WHITELIST }],
+
     // Text direction (LTR/RTL)
     [{ 'direction': 'rtl' }],
     

@@ -12,7 +12,7 @@
 
 // Import custom configuration
 import { FONT_WHITELIST, TOOLBAR_OPTIONS } from './config-override.js';
-import { SIZE_WHITELIST, WEIGHT_WHITELIST, DEFAULT_SIZE } from '/assets/packages/quill_web_editor/web/js/config.js';
+import { SIZE_WHITELIST, WEIGHT_WHITELIST, LINE_HEIGHT_WHITELIST, DEFAULT_SIZE } from '/assets/packages/quill_web_editor/web/js/config.js';
 import { enforceDefaultSize } from '/assets/packages/quill_web_editor/web/js/quill-setup.js';
 
 // Import custom utils (with Mulish font mapping)
@@ -46,6 +46,14 @@ export function registerQuillModules(Quill, QuillTableBetter) {
     whitelist: WEIGHT_WHITELIST.filter((w) => typeof w === 'string'),
   });
   Quill.register({ 'formats/weight': WeightStyle }, true);
+
+  // Register the custom "lineheight" format (block-level line-height) used by
+  // the line-height dropdown.
+  const LineHeightStyle = new Parchment.StyleAttributor('lineheight', 'line-height', {
+    scope: Parchment.Scope.BLOCK,
+    whitelist: LINE_HEIGHT_WHITELIST.filter((h) => typeof h === 'string'),
+  });
+  Quill.register({ 'formats/lineheight': LineHeightStyle }, true);
 }
 
 /**

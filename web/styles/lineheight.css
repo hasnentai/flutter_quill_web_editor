@@ -1,0 +1,47 @@
+/**
+ * Line Height Picker
+ * ==================
+ * Labels and styling for the custom "lineheight" dropdown. The editor uses a
+ * block-level style format with unitless line-height multipliers, so each
+ * picker item must declare its label. The default (unset) collapsed label
+ * reads "Line Height"; its dropdown item reads "Default".
+ */
+
+/* Give the picker enough room for the "Line Height" label */
+.ql-snow .ql-picker.ql-lineheight {
+  width: 110px;
+}
+
+/* Collapsed label (unset) and the reset/default item */
+.ql-snow .ql-picker.ql-lineheight .ql-picker-label::before {
+  content: 'Line Height';
+}
+.ql-snow .ql-picker.ql-lineheight .ql-picker-item::before {
+  content: 'Default';
+}
+
+/* Per-value labels (single, single-and-a-half, double, ...) */
+.ql-snow .ql-picker.ql-lineheight .ql-picker-label[data-value="1"]::before,
+.ql-snow .ql-picker.ql-lineheight .ql-picker-item[data-value="1"]::before {
+  content: '1.0';
+}
+.ql-snow .ql-picker.ql-lineheight .ql-picker-label[data-value="1.15"]::before,
+.ql-snow .ql-picker.ql-lineheight .ql-picker-item[data-value="1.15"]::before {
+  content: '1.15';
+}
+.ql-snow .ql-picker.ql-lineheight .ql-picker-label[data-value="1.5"]::before,
+.ql-snow .ql-picker.ql-lineheight .ql-picker-item[data-value="1.5"]::before {
+  content: '1.5';
+}
+.ql-snow .ql-picker.ql-lineheight .ql-picker-label[data-value="2"]::before,
+.ql-snow .ql-picker.ql-lineheight .ql-picker-item[data-value="2"]::before {
+  content: '2.0';
+}
+.ql-snow .ql-picker.ql-lineheight .ql-picker-label[data-value="2.5"]::before,
+.ql-snow .ql-picker.ql-lineheight .ql-picker-item[data-value="2.5"]::before {
+  content: '2.5';
+}
+.ql-snow .ql-picker.ql-lineheight .ql-picker-label[data-value="3"]::before,
+.ql-snow .ql-picker.ql-lineheight .ql-picker-item[data-value="3"]::before {
+  content: '3.0';
+}

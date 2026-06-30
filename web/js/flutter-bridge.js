@@ -5,6 +5,7 @@
  */
 
 import { CONTENT_CHANGE_THROTTLE } from './config.js';
+import { applyOrderedListContinuation } from './list-numbering.js';
 
 // Message throttling state
 let lastContentChangeTime = 0;
@@ -70,7 +71,12 @@ export function sendContentChangeImmediate(editor, html) {
     contentChangeTimer = null;
   }
   lastContentChangeTime = Date.now();
-  
+
+  // Keep numbered lists continuous across tables, then re-read the HTML so the
+  // (possibly pre-computed) html argument reflects the fix.
+  applyOrderedListContinuation(editor.root);
+  html = editor.root.innerHTML;
+
   const data = {
     type: 'contentChange',
     delta: editor.getContents(),
@@ -96,6 +102,7 @@ export function sendReady() {
  * @param {Object} editor - Quill editor instance
  */
 export function sendContentsResponse(editor) {
+  applyOrderedListContinuation(editor.root);
   sendToFlutter({
     type: 'response',
     action: 'getContents',
@@ -121,6 +128,7 @@ export function sendZoomChange(zoomLevel) {
  * @param {Object} editor - Quill editor instance
  */
 export function sendContentChange(editor) {
+  applyOrderedListContinuation(editor.root);
   sendToFlutter({
     type: 'contentChange',
     delta: editor.getContents(),

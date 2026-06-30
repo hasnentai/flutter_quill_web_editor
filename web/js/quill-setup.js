@@ -4,7 +4,7 @@
  * Quill editor initialization and registration
  */
 
-import { FONT_WHITELIST, SIZE_WHITELIST, WEIGHT_WHITELIST, DEFAULT_SIZE, TOOLBAR_OPTIONS } from './config.js';
+import { FONT_WHITELIST, SIZE_WHITELIST, WEIGHT_WHITELIST, LINE_HEIGHT_WHITELIST, DEFAULT_SIZE, TOOLBAR_OPTIONS } from './config.js';
 import { rgbToHex, mapFontFamily, mapFontSize, mapFontWeight } from './utils.js';
 
 /**
@@ -38,6 +38,15 @@ export function registerQuillModules(Quill, QuillTableBetter) {
     whitelist: WEIGHT_WHITELIST.filter((w) => typeof w === 'string'),
   });
   Quill.register({ 'formats/weight': WeightStyle }, true);
+
+  // Register a custom "lineheight" format backed by block-level CSS line-height,
+  // used by the line-height dropdown. Block scope applies it to the whole
+  // paragraph/heading/list item and serializes as `style="line-height: <n>"`.
+  const LineHeightStyle = new Parchment.StyleAttributor('lineheight', 'line-height', {
+    scope: Parchment.Scope.BLOCK,
+    whitelist: LINE_HEIGHT_WHITELIST.filter((h) => typeof h === 'string'),
+  });
+  Quill.register({ 'formats/lineheight': LineHeightStyle }, true);
 }
 
 /**
