@@ -172,6 +172,7 @@ export function preprocessHtml(html) {
     const style = el.style;
     const classes = [];
     let fontClass = null;
+    let sizeStyle = null;
     let colorStyle = null;
     let bgColorStyle = null;
     
@@ -190,6 +191,7 @@ export function preprocessHtml(html) {
       const size = mapFontSize(style.fontSize);
       if (size) {
         style.fontSize = size; // e.g. '14px'
+        sizeStyle = size;
       } else {
         style.removeProperty('font-size');
       }
@@ -280,7 +282,7 @@ export function preprocessHtml(html) {
     }
     
     // Special handling for table cells (TD, TH) - wrap text content in span with formatting
-    if ((el.tagName === 'TD' || el.tagName === 'TH') && (fontClass || sizeClass || colorStyle)) {
+    if ((el.tagName === 'TD' || el.tagName === 'TH') && (fontClass || sizeStyle || colorStyle)) {
       const hasFormattedChildren = el.querySelector('span[class*="ql-font"], span[class*="ql-size"]');
       
       if (!hasFormattedChildren) {
@@ -290,7 +292,7 @@ export function preprocessHtml(html) {
             if (child.nodeType === Node.TEXT_NODE && child.textContent.trim()) {
               const span = doc.createElement('span');
               if (fontClass) span.classList.add(fontClass);
-              if (sizeClass) span.classList.add(sizeClass);
+              if (sizeStyle) span.style.fontSize = sizeStyle;
               if (colorStyle) span.style.color = colorStyle;
               span.textContent = child.textContent;
               child.replaceWith(span);
@@ -299,7 +301,7 @@ export function preprocessHtml(html) {
                 wrapContent(child);
               } else if (child.tagName === 'SPAN' && !child.className.includes('ql-font') && !child.className.includes('ql-size')) {
                 if (fontClass && !child.classList.contains(fontClass)) child.classList.add(fontClass);
-                if (sizeClass && !child.classList.contains(sizeClass)) child.classList.add(sizeClass);
+                if (sizeStyle && !child.style.fontSize) child.style.fontSize = sizeStyle;
                 if (colorStyle && !child.style.color) child.style.color = colorStyle;
               }
             }
